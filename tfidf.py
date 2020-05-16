@@ -11,13 +11,7 @@ class Idf(object):
     """
     计算并存储 idf 字典。
     """
-
     def __init__(self, corpus):
-        """
-        计算 idf
-        Args:
-            corpus: 已经预处理好的语料，计算 idf 时 corpus 为 dict, key 为语料所在文件夹
-        """
         self.corpus = corpus
         self.idf_dict = self._cal()
 
@@ -42,11 +36,20 @@ class Idf(object):
             idf_path = os.path.join(d, 'idf_dict.json')
             with open(idf_path, 'w', encoding='utf-8') as f:
                 json.dump(self.idf_dict[d], f, ensure_ascii=False)
-                print(json.dumps(self.idf_dict, ensure_ascii=False))
+                # print(json.dumps(self.idf_dict, ensure_ascii=False))
             print('idf 字典已保存，路径：', idf_path)
 
 
 def sort(dic, reverse=True):
+    """
+    从大到小排序 dict
+    Args:
+        dic: 需要进行排序的字典
+        reverse: bool, True 表示从大到小，False 表示从小到大
+
+    Returns:
+        排序好的 dict
+    """
     dic = sorted(dic.items(), key=lambda item: item[1], reverse=reverse)
     return dic
 

@@ -13,11 +13,11 @@ class Data(object):
             self.stopwords = f.read().strip().split('\n')
         self.corpus = self._data_prepro()
 
-    @staticmethod
-    def _str2uni(doc):
-        """将语料统一编码格式为 utf-8"""
-
-        return doc
+    # @staticmethod
+    # def _str2uni(doc):
+    #     """将语料统一编码格式为 utf-8"""
+    #
+    #     return doc
 
     def _load_data(self, file_path, d):
         """加载原始文档"""
@@ -25,7 +25,7 @@ class Data(object):
             doc = f.read().strip().replace(' ', '')
             if not os.path.isdir(self.file_dir):
                 self.raw_text = doc
-            doc = self._str2uni(doc)
+            # doc = self._str2uni(doc)
         return doc
 
     def _data_prepro(self):
