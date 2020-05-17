@@ -35,6 +35,7 @@ class Gui(object):
         self.doc_title_r1 = tk.Variable(self.frm_l, value='文件内容展示')
         self.doc_title_r2 = tk.Variable(self.frm_l, value='文件内容展示')
         self.doc_panel_r2 = tk.Text(self.frm_r, width=50, height=10)
+        self.show_sim_btn = tk.Button(self.frm_r, text='展示相似度', command=self.show_similarity)
         self.sim_panel = tk.Listbox(self.frm_r, width=50, height=10)
 
     def construct_gui(self):
@@ -73,6 +74,7 @@ class Gui(object):
         tk.Label(self.frm_r, textvariable=self.doc_title_r2).pack()
         self.doc_panel_r2.pack()
         tk.Label(self.frm_r, text='相似度').pack()
+        self.show_sim_btn.pack(pady=5)
         self.sim_panel.pack()
 
         self.root.mainloop()
@@ -114,13 +116,9 @@ class Gui(object):
             if text_panel == 'dp':
                 self.topk_var.set(20)
                 self.refresh_key_words()
-            elif text_panel == 'dp_r1' or text_panel == 'dp_r2':
-                if self.status.get('dp_r1', None) and self.status.get('dp_r2', None):
-                    self.show_similarity(self.status['dp_r1']['data'].corpus[0],
-                                         self.status['dp_r2']['data'].corpus[0])
-            # keywords = tf_idf.extract_key_words(5)
-            # for key, val in keywords[0].items():
-            #     key_word_panel.insert('end', '{}: {:.5f}'.format(key, float(val)))
+            # elif text_panel == 'dp_r1' or text_panel == 'dp_r2':
+            #     if self.status.get('dp_r1', None) and self.status.get('dp_r2', None):
+            #         self.show_similarity()
         except Exception:
             traceback.print_exc()
             messagebox.showerror(message=traceback.format_exc())
@@ -150,7 +148,7 @@ class Gui(object):
         except Exception:
             messagebox.showerror(message=traceback.format_exc())
 
-    def show_similarity(self, doc1, doc2):
+    def show_similarity(self):
         self.sim_panel.delete(0, 'end')
         # tf_idf 相似度计算
         tfidf_dpr1 = self.status['dp_r1']['tfidf']
@@ -174,6 +172,8 @@ class Gui(object):
         print('-' * 30)
         print('tfidf (topK=300): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
         # word2vec 相似度计算
+        doc1 = self.status['dp_r1']['data'].corpus[0]
+        doc2 = self.status['dp_r2']['data'].corpus[0]
         doc1_vec = self.wv_model.doc2vec(doc1)
         doc2_vec = self.wv_model.doc2vec(doc2)
         self.sim_panel.insert('end', '-' * 30)
