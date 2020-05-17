@@ -35,6 +35,8 @@ class Data(object):
             print('正在读取文件夹：', self.file_dir)
             corpus = {self.file_dir: []}
             for file_path in os.listdir(self.file_dir):
+                if file_path == 'idf_dict.json':
+                    continue
                 doc = self._corpora_per_doc(file_path=file_path, file_dir=self.file_dir)
                 corpus[self.file_dir].append(doc)
         elif os.path.exists(self.file_dir):

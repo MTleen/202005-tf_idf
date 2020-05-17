@@ -20,12 +20,13 @@ class Gui(object):
         self.frm = tk.Frame(self.root)
         self.frm_l = tk.Frame(self.frm)
         self.frm_r = tk.Frame(self.frm)
+        self.menubar = tk.Menu(self.root)
+        self.idf_menu = tk.Menu(self.menubar, tearoff=0)
         self.doc_title = tk.Variable(self.frm_l, value='文件内容展示')
         self.doc_panel = tk.Text(self.frm_l, width=50, height=20)
         self.frm_topk = tk.Frame(self.frm_l)
         self.topk_var = tk.Variable(self.frm_topk)
         self.topk_entry = tk.Entry(self.frm_topk, textvariable=self.topk_var)
-        self.topk_button = tk.Button(self.frm_topk, text='生成关键词', command=self.refresh_key_words)
         self.frm_kw = tk.Frame(self.frm_l)
         self.frm_ours = tk.Frame(self.frm_kw)
         self.frm_jieba = tk.Frame(self.frm_kw)
@@ -46,7 +47,9 @@ class Gui(object):
         self.frm.pack()
         self.frm_l.pack(side='left', padx=40)
         self.frm_r.pack(side='right', padx=40)
-
+        # self.menubar.add_cascade(label='idf', menu=self.idf_menu)
+        self.menubar.add_command(label='生成 idf 字典', command=self._gen_idf)
+        self.root.config(menu=self.menubar)
         # 构建关键词提取模块界面
         tk.Label(self.frm_l, text='关键词提取模块').pack()
         tk.Button(self.frm_l, text='选择文件', command=lambda: self.reveal_doc('dp')).pack()
@@ -55,7 +58,7 @@ class Gui(object):
         tk.Label(self.frm_l, text='关键词展示').pack()
         self.frm_topk.pack(pady=10)
         self.topk_entry.pack(side='left')
-        self.topk_button.pack(side='right', padx=10)
+        tk.Button(self.frm_topk, text='生成关键词', command=self.refresh_key_words).pack(side='right', padx=10)
         self.frm_kw.pack()
         self.frm_ours.pack(side='left', padx=10)
         tk.Label(self.frm_ours, text='Ours').pack()
@@ -190,6 +193,17 @@ class Gui(object):
                               'tfidf+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
         print('-' * 30)
         print('tfidf+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
+
+    @staticmethod
+    def _gen_idf():
+        try:
+            data = Data('dataset/data')
+            corpus = data.corpus
+            idf = Idf(corpus)
+            idf.save()
+            tk.messagebox.showinfo(message='idf 字典保存成功\n保存路径：.\\dataset\\data\\idf_dict.json')
+        except Exception:
+            tk.messagebox.showerror(message='请将文档放在 ".\\dataset\\data" 文件夹下，然后重试。')
 
 
 def load_idf(idf_dir):
