@@ -207,8 +207,12 @@ class Gui(object):
 
 
 def load_idf(idf_dir):
-    with open(os.path.join(idf_dir, 'idf_dict.json'), 'r', encoding='utf-8') as f:
-        return json.load(f)
+    idf_path = os.path.join(idf_dir, 'idf_dict.json')
+    try:
+        with open(os.path.join(idf_dir, 'idf_dict.json'), 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileExistsError:
+        tk.messagebox.showerror(message='{} 不存在，请先生成 idf 字典。'.format(idf_path))
 
 
 def cosine_similarity(vec1, vec2):
