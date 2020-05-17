@@ -13,6 +13,10 @@ from jieba import analyse
 
 
 class Gui(object):
+    """
+    构建 gui
+    """
+
     def __init__(self):
         self.wv_model = WV('model\\model7.model')
         self.status = {}
@@ -84,7 +88,11 @@ class Gui(object):
 
     def reveal_doc(self, text_panel):
         """
-        点击“选择文件”按钮调用此函数
+        点击“选择文件”按钮调用此函数，获取文件路径，并将文档内容展示在相应的文本框中
+        Args:
+            text_panel: 'dp': 表示关键词展示模块中的text框
+                        'dp_r1': 表示文档相似度对比模块中的第一个text框
+                        'dp_r2': 表示文档相似度对比模块中的第二个text框
         """
         if text_panel == 'dp':
             t = self.doc_panel
@@ -112,22 +120,28 @@ class Gui(object):
             idf = load_idf(os.path.dirname(file_path))
             # 计算 tf_idf score
             tf_idf = Tfidf(data.corpus, idf)
+            # 保存当前文档的data、tfidf对象，用于后续的提取关键词或者计算相似度
             self.status[text_panel] = {
                 'data': data,
                 'tfidf': tf_idf
             }
             if text_panel == 'dp':
+                # 提取关键词模块，默认提取20个关键词
                 self.topk_var.set(20)
                 self.refresh_key_words()
             elif text_panel == 'dp_r1' or text_panel == 'dp_r2':
                 # if self.status.get('dp_r1', None) and self.status.get('dp_r2', None):
                 #     self.show_similarity()
+                # 当文档相似度模块选择新的文档时，清空相似度输出的文本框
                 self.sim_panel.delete(0, 'end')
         except Exception:
             traceback.print_exc()
             # messagebox.showerror(message=traceback.format_exc())
 
     def refresh_key_words(self):
+        """
+        点击”生成关键词“按钮调用词函数，会刷新关键词
+        """
         topK = self.topk_entry.get()
         try:
             topK = int(topK)
@@ -153,6 +167,7 @@ class Gui(object):
         #     messagebox.showerror(message=traceback.format_exc())
 
     def show_similarity(self):
+        """展示相似度，点击”显示相似度”按钮调用此函数“"""
         self.sim_panel.delete(0, 'end')
         # tf_idf 相似度计算
         tfidf_dpr1 = self.status['dp_r1']['tfidf']
@@ -167,14 +182,6 @@ class Gui(object):
             doc1_vec, doc2_vec = doc2vec_tfidf(20, data1, data2, is_jieba=True)
             # self.sim_panel.insert('end', '-' * 30)
             self.sim_panel.insert('end', 'jieba (topK={}): {:.5f}'.format(topK, cosine_similarity(doc1_vec, doc2_vec)))
-        # # 30 个关键字
-        # doc1_vec, doc2_vec = doc2vec_tfidf(30, tfidf_dpr1, tfidf_dpr2)
-        # self.sim_panel.insert('end', '-' * 30)
-        # self.sim_panel.insert('end', 'tf-idf (topK=30): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
-        # # 300 个关键字
-        # doc1_vec, doc2_vec = doc2vec_tfidf(300, tfidf_dpr1, tfidf_dpr2)
-        # self.sim_panel.insert('end', '-' * 30)
-        # self.sim_panel.insert('end', 'tf-idf (topK=300): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
         # word2vec 相似度计算
         doc1_vec = self.wv_model.doc2vec(data1.corpus[0])
         doc2_vec = self.wv_model.doc2vec(data2.corpus[0])
@@ -191,6 +198,9 @@ class Gui(object):
 
     @staticmethod
     def _gen_idf():
+        """
+        点击“生成idf字典”按钮执行此函数，
+        """
         try:
             data = Data('dataset/data')
             corpus = data.corpus
@@ -202,6 +212,14 @@ class Gui(object):
 
 
 def load_idf(idf_dir):
+    """
+    加载idf字典
+    Args:
+        idf_dir: idf_dir所在文件夹，由选择的文件路径自动解析得到
+
+    Return:
+        idf 字典
+    """
     print(idf_dir)
     idf_path = os.path.join(idf_dir, 'idf_dict.json')
     try:
@@ -218,6 +236,16 @@ def cosine_similarity(vec1, vec2):
 
 
 def doc2vec_tfidf(topK, *args, is_jieba=False):
+    """
+    将文档转换为向量
+    Args:
+        topK: 关键词个数
+        *args: 如果is_jieba为False，则为tfidf对象的列表，如果is_jieba为True，则为Data对象的列表
+        is_jieba: 是否使用jieba提取关键词
+
+    Return:
+        文档向量 list
+    """
     kw_set = set()
     docs_kw = []
     for arg in args:
@@ -227,7 +255,6 @@ def doc2vec_tfidf(topK, *args, is_jieba=False):
             kw = analyse.extract_tags(''.join(arg.corpus[0]), topK=topK, withWeight=True)
             kw = dict(kw)
         docs_kw.append(kw)
-        # kw_r2 = tfidf_dpr2.extract_key_words(20)[0]
         kw_set = kw_set.union(set(kw))
     docs_vec = []
     for i, _ in enumerate(args):
@@ -236,7 +263,6 @@ def doc2vec_tfidf(topK, *args, is_jieba=False):
             doc_vec.append(float(docs_kw[i].get(kw, 0.)))
             # doc2_vec.append(float(kw_r2.get(kw, 0)))
         docs_vec.append(np.array(doc_vec))
-
 
     return docs_vec
 
