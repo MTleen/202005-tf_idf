@@ -30,7 +30,7 @@ class Gui(object):
         self.frm_kw = tk.Frame(self.frm_l)
         self.frm_ours = tk.Frame(self.frm_kw)
         self.frm_jieba = tk.Frame(self.frm_kw)
-        self.kw_panel_ours = tk.Listbox(self.frm_ours, width=20, height=10)
+        self.kw_panel_ours = tk.Listbox(self.frm_ours, width=30, height=10)
         self.kw_panel_jieba = tk.Listbox(self.frm_jieba, width=20, height=10)
         self.doc_panel_r1 = tk.Text(self.frm_r, width=50, height=10)
         self.doc_title_r1 = tk.Variable(self.frm_l, value='文件内容展示')
@@ -41,7 +41,7 @@ class Gui(object):
 
     def construct_gui(self):
         """构建 GUI"""
-        self.root.title('TFIDF')
+        self.root.title('人工智能-文档关键词提取及文档相似度对比：TF-IDF')
         self.root.geometry('900x700')
         # 定义三个框架 frame
         self.frm.pack()
@@ -61,11 +61,11 @@ class Gui(object):
         tk.Button(self.frm_topk, text='生成关键词', command=self.refresh_key_words).pack(side='right', padx=10)
         self.frm_kw.pack()
         self.frm_ours.pack(side='left', padx=10)
-        tk.Label(self.frm_ours, text='Ours').pack()
+        # tk.Label(self.frm_ours, text='Ours').pack()
         self.kw_panel_ours.pack()
-        self.frm_jieba.pack(side='right', padx=10)
-        tk.Label(self.frm_jieba, text='Jieba').pack()
-        self.kw_panel_jieba.pack()
+        # self.frm_jieba.pack(side='right', padx=10)
+        # tk.Label(self.frm_jieba, text='Jieba').pack()
+        # self.kw_panel_jieba.pack()
 
         # 相似度输出模块
         tk.Label(self.frm_r, text='相似度输出模块').pack()
