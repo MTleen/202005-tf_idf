@@ -3,6 +3,7 @@ import os
 import re
 import time
 import jieba
+from tkinter import messagebox
 
 
 class Data(object):
@@ -21,12 +22,15 @@ class Data(object):
 
     def _load_data(self, file_path, d):
         """加载原始文档"""
-        with open(os.path.join(d, file_path), 'r', encoding='utf-8') as f:
-            doc = f.read().strip().replace(' ', '')
-            if not os.path.isdir(self.file_dir):
-                self.raw_text = doc
-            # doc = self._str2uni(doc)
-        return doc
+        try:
+            with open(os.path.join(d, file_path), 'r', encoding='utf-8') as f:
+                doc = f.read().strip().replace(' ', '')
+                if not os.path.isdir(self.file_dir):
+                    self.raw_text = doc
+                # doc = self._str2uni(doc)
+            return doc
+        except Exception:
+            messagebox.showerror(message='{} 无法打开，请重新选择。'.format(os.path.join(d, file_path)))
 
     def _data_prepro(self):
         # corpus = {}
@@ -35,7 +39,7 @@ class Data(object):
             print('正在读取文件夹：', self.file_dir)
             corpus = {self.file_dir: []}
             for file_path in os.listdir(self.file_dir):
-                if file_path == 'idf_dict.json':
+                if not os.path.splitext(file_path)[-1] == '.txt':
                     continue
                 doc = self._corpora_per_doc(file_path=file_path, file_dir=self.file_dir)
                 corpus[self.file_dir].append(doc)

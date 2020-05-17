@@ -20,12 +20,18 @@ class Gui(object):
     def __init__(self):
         self.wv_model = WV('model\\model7.model')
         self.status = {}
+        self.idf_dir = './dataset/data'
+        self.idf_path = None
+
         self.root = tk.Tk()
         self.frm = tk.Frame(self.root)
         self.frm_l = tk.Frame(self.frm)
         self.frm_r = tk.Frame(self.frm)
         self.menubar = tk.Menu(self.root)
         self.idf_menu = tk.Menu(self.menubar, tearoff=0)
+        self.idf_root = None
+        self.path_var = None
+
         self.doc_title = tk.Variable(self.frm_l, value='文件内容展示')
         self.doc_panel = tk.Text(self.frm_l, width=50, height=20)
         self.frm_topk = tk.Frame(self.frm_l)
@@ -46,13 +52,23 @@ class Gui(object):
     def construct_gui(self):
         """构建 GUI"""
         self.root.title('TF-IDF')
-        self.root.geometry('900x700')
+        # 设置窗口大小
+        win_width = 900
+        win_height = 700
+        # 获取屏幕分辨率
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        x = int((screen_width - win_width) / 2)
+        y = int((screen_height - win_height) / 2)
+        self.root.geometry("%sx%s+%s+%s" % (win_width, win_height, x, y))
+        self.root.resizable(0, 0)
         # 定义三个框架 frame
         self.frm.pack()
         self.frm_l.pack(side='left', padx=40)
         self.frm_r.pack(side='right', padx=40)
         # self.menubar.add_cascade(label='idf', menu=self.idf_menu)
-        self.menubar.add_command(label='生成 idf 字典', command=self._gen_idf)
+        self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
         self.root.config(menu=self.menubar)
         # 构建关键词提取模块界面
         tk.Label(self.frm_l, text='关键词提取模块').pack()
@@ -117,7 +133,7 @@ class Gui(object):
             print('file:', os.path.split(file_path)[-1])
             t.insert('end', data.raw_text)
             # 加载 idf 字典
-            idf = load_idf(os.path.dirname(file_path))
+            idf = load_idf(self.idf_dir)
             # 计算 tf_idf score
             tf_idf = Tfidf(data.corpus, idf)
             # 保存当前文档的data、tfidf对象，用于后续的提取关键词或者计算相似度
@@ -146,13 +162,13 @@ class Gui(object):
         try:
             topK = int(topK)
             tf_idf = self.status['dp']['tfidf']
-            doc = self.status['dp']['data'].corpus[0]
+            data = self.status['dp']['data']
             self.kw_panel_jieba.delete(0, 'end')
             self.kw_panel_ours.delete(0, 'end')
-            keywords = tf_idf.extract_key_words(topK)[0]
+            keywords = extract_kw(topK, tf_idf, is_jieba=False)[0]
             for key, val in keywords.items():
                 self.kw_panel_ours.insert('end', '{}: {:.5f}'.format(key, float(val)))
-            jieba_keywords = analyse.extract_tags(''.join(doc), topK=topK, withWeight=True)
+            jieba_keywords = extract_kw(topK, data, is_jieba=True)[0]
             for key, val in jieba_keywords:
                 self.kw_panel_jieba.insert('end', '{}: {:.5f}'.format(key, float(val)))
         except ValueError:
@@ -174,7 +190,7 @@ class Gui(object):
         tfidf_dpr2 = self.status['dp_r2']['tfidf']
         data1 = self.status['dp_r1']['data']
         data2 = self.status['dp_r2']['data']
-        # 20 个关键词
+        # tf-idf 相似度
         for topK in [20, 40, 200]:
             doc1_vec, doc2_vec = doc2vec_tfidf(topK, tfidf_dpr1, tfidf_dpr2)
             self.sim_panel.insert('end', '-' * 30)
@@ -188,27 +204,51 @@ class Gui(object):
         self.sim_panel.insert('end', '-' * 30)
         self.sim_panel.insert('end', 'word2vec (dim=300): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
         # tfidf+wv 相似度计算
-        doc1_kw = list(tfidf_dpr1.extract_key_words(20)[0].keys())
-        doc2_kw = list(tfidf_dpr2.extract_key_words(20)[0].keys())
-        doc1_vec = self.wv_model.doc2vec(doc1_kw)
-        doc2_vec = self.wv_model.doc2vec(doc2_kw)
+        doc1_kw, doc2_kw = extract_kw(20, tfidf_dpr1, tfidf_dpr2, is_jieba=False)
+        doc1_vec = self.wv_model.doc2vec(list(doc1_kw.keys()))
+        doc2_vec = self.wv_model.doc2vec(list(doc2_kw.keys()))
         self.sim_panel.insert('end', '-' * 30)
         self.sim_panel.insert('end',
                               'tfidf+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
+        # jieba+wv 相似度计算
+        doc1_kw, doc2_kw = extract_kw(20, tfidf_dpr1, tfidf_dpr2, is_jieba=True)
+        doc1_vec = self.wv_model.doc2vec(list(doc1_kw.keys()))
+        doc2_vec = self.wv_model.doc2vec(list(doc2_kw.keys()))
+        self.sim_panel.insert('end', '-' * 30)
+        self.sim_panel.insert('end',
+                              'jieba+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
 
-    @staticmethod
-    def _gen_idf():
+    def gen_idf(self):
         """
         点击“生成idf字典”按钮执行此函数，
         """
+        self.idf_root = tk.Toplevel()
+        self.idf_root.wm_attributes('-topmost', 1)
+        self.idf_root.resizable(0, 0)
+        self.idf_root.geometry('400x90')
+        self.path_var = tk.Variable(self.idf_root, value='dataset\\data')
+        self.idf_root.title('选择生成 idf 字典的文件夹。')
+        tk.Label(self.idf_root, text='目标路径：').grid(row=0, column=0, padx=5)
+        tk.Entry(self.idf_root, textvariable=self.path_var, width=35).grid(row=0, column=1)
+        tk.Button(self.idf_root, text='选择路径', command=self.select_dir).grid(row=0, column=2, padx=10)
+        tk.Button(self.idf_root, text='确定', command=self.confirm_dir).grid(row=1, column=1, pady=10)
+
+    def select_dir(self):
+        self.path_var.set(filedialog.askdirectory())
+
+    def confirm_dir(self):
+        self.idf_dir = self.path_var.get()
+        self.idf_path = os.path.join(self.idf_dir, 'idf_dict.json')
         try:
-            data = Data('dataset/data')
+            data = Data(self.idf_dir)
             corpus = data.corpus
             idf = Idf(corpus)
             idf.save()
-            tk.messagebox.showinfo(message='idf 字典保存成功\n保存路径：.\\dataset\\data\\idf_dict.json')
+            tk.messagebox.showinfo(message='idf 字典保存成功\n保存路径：{}'.format(self.idf_path))
+            self.idf_root.destroy()
         except Exception:
-            tk.messagebox.showerror(message='请将文档放在 ".\\dataset\\data" 文件夹下，然后重试。')
+            # tk.messagebox.showerror(message='请将文档放在 ".\\dataset\\data" 文件夹下，然后重试。')
+            traceback.print_exc()
 
 
 def load_idf(idf_dir):
@@ -247,14 +287,9 @@ def doc2vec_tfidf(topK, *args, is_jieba=False):
         文档向量 list
     """
     kw_set = set()
-    docs_kw = []
-    for arg in args:
-        if not is_jieba:
-            kw = arg.extract_key_words(topK)[0]
-        else:
-            kw = analyse.extract_tags(''.join(arg.corpus[0]), topK=topK, withWeight=True)
-            kw = dict(kw)
-        docs_kw.append(kw)
+    # for arg in args:
+    docs_kw = extract_kw(topK, *args, is_jieba=is_jieba)
+    for kw in docs_kw:
         kw_set = kw_set.union(set(kw))
     docs_vec = []
     for i, _ in enumerate(args):
@@ -266,6 +301,16 @@ def doc2vec_tfidf(topK, *args, is_jieba=False):
 
     return docs_vec
 
+
+def extract_kw(topK, *entities, is_jieba=False):
+    kws = []
+    for entity in entities:
+        if is_jieba:
+            kw = dict(analyse.extract_tags(''.join(entity.corpus[0]), topK=topK, withWeight=True))
+        else:
+            kw = entity.extract_key_words(topK)[0]
+        kws.append(kw)
+    return kws
 
 def main():
     # topK, doc_num

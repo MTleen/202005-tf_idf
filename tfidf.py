@@ -74,7 +74,7 @@ class Tfidf(object):
         token_freq = pd.DataFrame(doc).iloc[:, 0].value_counts()
         # token_freq = token_freq.values / float(len(doc))
         token_freq = dict(zip(token_freq.index, token_freq.values / float(len(doc))))
-        score = {key: '%.10f' % (float(val) * float(self.idf_dict[key])) for key, val in token_freq.items()}
+        score = {key: '%.10f' % (float(val) * float(self.idf_dict.get(key, 0))) for key, val in token_freq.items()}
         return sort(score)
 
     def extract_key_words(self, topK):
