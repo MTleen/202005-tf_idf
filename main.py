@@ -119,12 +119,13 @@ class Gui(object):
             if text_panel == 'dp':
                 self.topk_var.set(20)
                 self.refresh_key_words()
-            # elif text_panel == 'dp_r1' or text_panel == 'dp_r2':
-            #     if self.status.get('dp_r1', None) and self.status.get('dp_r2', None):
-            #         self.show_similarity()
+            elif text_panel == 'dp_r1' or text_panel == 'dp_r2':
+                # if self.status.get('dp_r1', None) and self.status.get('dp_r2', None):
+                #     self.show_similarity()
+                self.sim_panel.delete(0, 'end')
         except Exception:
             traceback.print_exc()
-            messagebox.showerror(message=traceback.format_exc())
+            # messagebox.showerror(message=traceback.format_exc())
 
     def refresh_key_words(self):
         topK = self.topk_entry.get()
@@ -148,8 +149,8 @@ class Gui(object):
             messagebox.showerror(message='请先选择文档。')
             # traceback.print_exc()
             return
-        except Exception:
-            messagebox.showerror(message=traceback.format_exc())
+        # except Exception:
+        #     messagebox.showerror(message=traceback.format_exc())
 
     def show_similarity(self):
         self.sim_panel.delete(0, 'end')
@@ -207,12 +208,13 @@ class Gui(object):
 
 
 def load_idf(idf_dir):
+    print(idf_dir)
     idf_path = os.path.join(idf_dir, 'idf_dict.json')
     try:
         with open(os.path.join(idf_dir, 'idf_dict.json'), 'r', encoding='utf-8') as f:
             return json.load(f)
-    except FileExistsError:
-        tk.messagebox.showerror(message='{} 不存在，请先生成 idf 字典。'.format(idf_path))
+    except FileNotFoundError:
+        tk.messagebox.showerror(message='idf 字典不存在，请先生成 idf 字典。'.format(idf_path))
 
 
 def cosine_similarity(vec1, vec2):
