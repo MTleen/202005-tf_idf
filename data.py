@@ -10,7 +10,7 @@ class Data(object):
     def __init__(self, file_dir):
         self.file_dir = file_dir
         self.raw_text = None
-        with open('./dataset/stopwords.txt', 'r', encoding='utf-8') as f:
+        with open('./dataset/stopwords.txt', 'r', encoding='utf-8', errors='ignore') as f:
             self.stopwords = f.read().strip().split('\n')
         self.corpus = self._data_prepro()
 
