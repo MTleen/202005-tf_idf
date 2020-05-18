@@ -146,7 +146,7 @@ def pdfwater(file_path, output_dir, content):
         input_stream.close()
         result.close()
 
-        messagebox.showinfo(message='PDF 文件加密成功\n结果保存在：{}'.format(pdf_file_out))
+        messagebox.showinfo(message='PDF 文件添加水印成功\n结果保存在：{}'.format(pdf_file_out))
     except Exception:
         traceback.print_exc()
 
