@@ -48,7 +48,7 @@ class Pdf(SubInterface):
         self.text_panel.destroy()
         self.pdfs_panel.pack(padx=100)
         tk.Button(self.frm_exhibition, text='开始合并',
-                  command=lambda: merge_pdf(self.file_path)).pack(pady=20)
+                  command=lambda: merge_pdf(self.file_path, self.output_path_var.get())).pack(pady=20)
 
     def encrypt_panel(self):
         tk.Label(self.frm_func, text='输入加密密码：').grid(row=0, column=0)

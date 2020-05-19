@@ -19,6 +19,7 @@ class Root(object):
 
     def construct_gui(self):
         self.root.title('Program')
+        self.root.wm_attributes('-topmost', 0)
         self.set_win_size(770, 280)
         self.set_menu()
         self.set_func_matrix()

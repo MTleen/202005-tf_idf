@@ -23,7 +23,7 @@ class SubInterface(object):
 
     def construct_gui(self):
         self.root.title(self.title)
-        self.root.wm_attributes('-topmost', 1)
+        # self.root.wm_attributes('-topmost', 1)
         self.set_win_size(650, 500)
         self.frm_exhibition.pack(side='left', padx=40, ipady=40)
         self.frm_func.pack(side='left', padx=40, ipady=40)
@@ -59,6 +59,7 @@ class SubInterface(object):
         self.root.resizable(0, 0)
 
     def select_file(self, mode):
+        self.root.wm_attributes('-topmost', 0)
         if mode == 'input':
             path_ = filedialog.askopenfilenames()
             if path_ is None:
@@ -72,6 +73,7 @@ class SubInterface(object):
                 messagebox.showinfo(message='请选择正确的文件夹。')
                 return
             self.output_path_var.set(path_)
+        self.root.wm_attributes('-topmost', 1)
 
     def reveal_file(self):
         pass

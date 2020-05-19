@@ -39,6 +39,7 @@ class OCR(SubInterface):
         self.img_panel.pack()
 
     def select_file(self, mode):
+        self.root.wm_attributes('-topmost', 0)
         path_ = filedialog.askopenfilename()
         if path_ is None:
             messagebox.showinfo(message='请选择正确的文件。')
@@ -48,6 +49,7 @@ class OCR(SubInterface):
             self.reveal_file()
         elif mode == 'output':
             self.output_path_var.set(path_)
+        self.root.wm_attributes('-topmost', 1)
 
     def baidu_ocr(self):
         """
