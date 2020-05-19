@@ -6,8 +6,13 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 import os
 import traceback
-from aip import AipOcr
-from PIL import Image
+from pdfminer.pdfparser import PDFParser
+from pdfminer.pdfdocument import PDFDocument
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.layout import LTTextBoxHorizontal, LAParams
+from pdfminer.pdfpage import PDFPage
+from io import StringIO
 
 
 def is_path_correct(file_path, output_dir):
@@ -23,7 +28,7 @@ def split_pdf(file_path, start_page, end_page, output_dir):
         if not is_path_correct(file_path, output_dir):
             return
         fp_read_file = open(file_path, 'rb')  # 打开要拆分的文件
-        pdf_input = PdfFileReader(fp_read_file)  # 将要分割的PDF内容格式化
+        pdf_input = PdfFileReader(fp_read_file, strict=False)  # 将要分割的PDF内容格式化
         page_count = pdf_input.getNumPages()  # 获取PDF页数
         start_page = page_count if start_page == 'max' else int(start_page)
         end_page = page_count if end_page == 'max' else int(end_page)
@@ -52,7 +57,7 @@ def split_pdf(file_path, start_page, end_page, output_dir):
 def merge_pdf(pdfs, output_dir):
     pdfFileWriter = PdfFileWriter()
     for inFile in pdfs:  # 依次循环打开要合并文件
-        pdfReader = PdfFileReader(open(inFile, 'rb'))
+        pdfReader = PdfFileReader(open(inFile, 'rb'), strict=False)
         numPages = pdfReader.getNumPages()
         for index in range(0, numPages):
             pageObj = pdfReader.getPage(index)
@@ -67,7 +72,7 @@ def password(file_path, output_dir, password):
     try:
         if not is_path_correct(file_path, output_dir):
             return
-        pdfReader = PdfFileReader(open(file_path, 'rb'))
+        pdfReader = PdfFileReader(open(file_path, 'rb'), strict=False)
         pdfWriter = PdfFileWriter()
         for pageNum in range(pdfReader.numPages):
             pdfWriter.addPage(pdfReader.getPage(pageNum))
@@ -153,14 +158,48 @@ def pdfwater(file_path, output_dir, content):
 
 def read_pdf(pdf_path):
     try:
-        with open(pdf_path, 'rb') as f:
-            pdf_reader = PdfFileReader(f)
-            page_count = pdf_reader.getNumPages()
-            content = None
-            for i in range(page_count):
-                page = pdf_reader.getPage(i)
-                page_text = page.extractText()
-                content = page_text if content is None else content + page_text
+        fp = open(pdf_path, 'rb')
+        # 用文件对象来创建一个pdf文档分析器
+        parser = PDFParser(fp)
+        # 创建一个  PDF 文档
+        doc = PDFDocument(parser=parser)
+        # 连接分析器 与文档对象
+        parser.set_document(doc)
+        # 检测文档是否提供txt转换，不提供就忽略； 当然对于不提供txt转换的PDF 可以采用OCR 技术
+        if not doc.is_extractable:
+            messagebox.showerror(message='无法解析 PDF 文件 {}，请重新选择。'.format(pdf_path))
+        # 创建PDf 资源管理器 来管理共享资源
+        rsrcmgr = PDFResourceManager()
+        # 创建一个PDF设备对象
+        laparams = LAParams()
+        device = PDFPageAggregator(rsrcmgr, laparams=laparams)
+        interpreter = PDFPageInterpreter(rsrcmgr, device)
+        # 处理文档对象中每一页的内容
+        # doc.get_pages() 获取page列表
+        # 循环遍历列表，每次处理一个page的内容
+        # 这里layout是一个LTPage对象 里面存放着 这个page解析出的各种对象 一般包括LTTextBox, LTFigure, LTImage, LTTextBoxHorizontal 等等 想要获取文本就获得对象的text属性，
+        page_count = 0
+        content = ''
+        for i, page in enumerate(PDFPage.create_pages(doc)):
+            interpreter.process_page(page)
+            layout = device.get_result()
+            for x in layout:
+                if isinstance(x, LTTextBoxHorizontal):
+                    result = x.get_text()
+                    content += result
+                    print(result)
+            page_count += 1
+        # with open(pdf_path, 'rb') as f:
+        #     pdf_reader = PdfFileReader(f, strict=False)
+        #     page_count = pdf_reader.getNumPages()
+        #     # page_count = len(pdf_reader.pages)
+        #     content = None
+        #     for i in range(page_count):
+        #         page = pdf_reader.getPage(i)
+        #         page_text = page.extractText()
+        #         page_text = page_text
+        #         content = page_text if content is None else content + page_text + '\n'
         return page_count, content
     except PdfReadError:
         messagebox.showerror(message='{}文件已加密或损坏，请重新选择。'.format(pdf_path))
+        traceback.print_exc()
