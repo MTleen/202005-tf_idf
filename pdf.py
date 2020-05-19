@@ -84,5 +84,6 @@ class Pdf(SubInterface):
             self.page_count_var.set('确定拆分范围（1-{}）'.format(self.page_count))
             self.text_panel.insert('end', pdf_content)
         else:
+            self.pdfs_panel.delete(0, 'end')
             for p in self.file_path:
-                self.pdfs_panel.insert(0, p)
+                self.pdfs_panel.insert('end', p)

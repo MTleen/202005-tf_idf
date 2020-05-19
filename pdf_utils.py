@@ -55,17 +55,23 @@ def split_pdf(file_path, start_page, end_page, output_dir):
 
 
 def merge_pdf(pdfs, output_dir):
-    pdfFileWriter = PdfFileWriter()
-    for inFile in pdfs:  # 依次循环打开要合并文件
-        pdfReader = PdfFileReader(open(inFile, 'rb'), strict=False)
-        numPages = pdfReader.getNumPages()
-        for index in range(0, numPages):
-            pageObj = pdfReader.getPage(index)
-            pdfFileWriter.addPage(pageObj)
-        # 最后,统一写入到输出文件中
-        outFile = os.path.join(output_dir, 'merge_result.pdf')
-        pdfFileWriter.write(open(outFile, 'wb'))
-    messagebox.showinfo(message='PDF 文件合并成功\n结果保存在：{}'.format(outFile))
+    try:
+        if not is_path_correct(pdfs, output_dir):
+            return
+        pdfFileWriter = PdfFileWriter()
+        for inFile in pdfs:  # 依次循环打开要合并文件
+            pdfReader = PdfFileReader(open(inFile, 'rb'), strict=False)
+            numPages = pdfReader.getNumPages()
+            for index in range(0, numPages):
+                pageObj = pdfReader.getPage(index)
+                pdfFileWriter.addPage(pageObj)
+            # 最后,统一写入到输出文件中
+            outFile = os.path.join(output_dir, 'merge_result.pdf')
+            pdfFileWriter.write(open(outFile, 'wb'))
+        messagebox.showinfo(message='PDF 文件合并成功\n结果保存在：{}'.format(outFile))
+    except PdfReadError:
+        messagebox.showerror(message='PDF 文件读取失败，请重新选择。')
+        traceback.print_exc()
 
 
 def password(file_path, output_dir, password):
