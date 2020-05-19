@@ -96,6 +96,7 @@ class DocKw(object):
                         'dp_r1': 表示文档相似度对比模块中的第一个text框
                         'dp_r2': 表示文档相似度对比模块中的第二个text框
         """
+        self.root.wm_attributes('-topmost', 0)
         if text_panel == 'dp':
             t = self.doc_panel
             title = self.doc_title
@@ -136,6 +137,7 @@ class DocKw(object):
                 #     self.show_similarity()
                 # 当文档相似度模块选择新的文档时，清空相似度输出的文本框
                 self.sim_panel.delete(0, 'end')
+            self.root.wm_attributes('-topmost', 1)
         except Exception:
             traceback.print_exc()
             # messagebox.showerror(message=traceback.format_exc())

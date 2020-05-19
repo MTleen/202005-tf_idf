@@ -63,7 +63,7 @@ class Pdf(SubInterface):
 
     def watermark_panel(self):
         tk.Label(self.frm_func, text='输入水印：').grid(row=0, column=0)
-        tk.Entry(self.frm_func, textvariable=self.password_var,
+        tk.Entry(self.frm_func, textvariable=self.watermark_var,
                  width=15) \
             .grid(row=0, column=1)
         tk.Button(self.frm_func, text='添加水印',

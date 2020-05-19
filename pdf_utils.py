@@ -174,6 +174,7 @@ def read_pdf(pdf_path):
         # 检测文档是否提供txt转换，不提供就忽略； 当然对于不提供txt转换的PDF 可以采用OCR 技术
         if not doc.is_extractable:
             messagebox.showerror(message='无法解析 PDF 文件 {}，请重新选择。'.format(pdf_path))
+            return
         # 创建PDf 资源管理器 来管理共享资源
         rsrcmgr = PDFResourceManager()
         # 创建一个PDF设备对象
