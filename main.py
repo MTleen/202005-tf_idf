@@ -9,6 +9,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 
 class Root(object):
+    """构建gui"""
     def __init__(self):
         self.root = tk.Tk()
         self.menubar = tk.Menu(self.root, tearoff=0)
@@ -41,6 +42,7 @@ class Root(object):
         self.root.resizable(0, 0)
 
     def set_menu(self):
+        """构建菜单栏"""
         self.menubar.add_cascade(label='OCR', menu=self.ocr_menu)
         self.menubar.add_cascade(label='文档编辑', menu=self.pdf_edit_menu)
         self.menubar.add_cascade(label='文档相似度', menu=self.sim_menu)
@@ -65,6 +67,7 @@ class Root(object):
         # self.about_menu.add_command(label='About me', command=lambda: self.root.destroy())
 
     def set_func_matrix(self):
+        """构建功能矩阵"""
         tk.Button(self.root, text='图片文字识别',
                   width=12, height=5, bg='red',
                   command=img_ocr).grid(row=0, column=0,
@@ -121,11 +124,13 @@ def img_ocr():
 
 
 def extract_kw():
+    """提取关键词"""
     doc_kw = DocKw()
     doc_kw.construct_gui()
 
 
 def show_sim():
+    """展示文档相似度"""
     doc_kw = DocKw()
     doc_kw.construct_sim_gui()
 
