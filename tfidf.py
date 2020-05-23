@@ -3,7 +3,6 @@ import math
 import json
 import os
 import pandas as pd
-import numpy as np
 from data import Data
 
 
@@ -12,6 +11,7 @@ class Idf(object):
     计算并存储 idf 字典。
     """
     def __init__(self, corpus):
+        # corpus 是一个 dict，key为文件夹名
         self.corpus = corpus
         self.idf_dict = self._cal()
 
@@ -56,6 +56,11 @@ def sort(dic, reverse=True):
 
 class Tfidf(object):
     def __init__(self, corpus, idf_dict):
+        """
+        Args:
+            corpus: list， 每个元素是一个分词后的文档词list
+            idf_dict: idf字典
+        """
         self.idf_dict = idf_dict
         self.corpus = corpus
         self.scores = self.cal()
@@ -70,6 +75,11 @@ class Tfidf(object):
     def _cal_score(self, doc):
         """
         计算每篇文档中词的 tf-idf 分数
+        Args:
+            doc: list，文档词汇列表
+
+        Return:
+            list, 每个元素为一个二元组，(token, score)，按分数从大到小排列
         """
         token_freq = pd.DataFrame(doc).iloc[:, 0].value_counts()
         # token_freq = token_freq.values / float(len(doc))

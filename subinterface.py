@@ -59,6 +59,14 @@ class SubInterface(object):
         self.root.resizable(0, 0)
 
     def select_file(self, mode):
+        """
+        选择文件/文件夹
+        Args:
+            mode: input/output，如果为input，则选择文件，若为output，则选择文件夹
+
+        Return:
+            文件名或文件夹
+        """
         self.root.wm_attributes('-topmost', 0)
         if mode == 'input':
             path_ = filedialog.askopenfilenames()
@@ -76,7 +84,13 @@ class SubInterface(object):
         self.root.wm_attributes('-topmost', 1)
 
     def reveal_file(self):
+        """
+        文件预览，具体由子类实现
+        """
         pass
 
     def func_panel(self):
+        """
+        根据功能不同，构造gui，具体由子类实现
+        """
         pass
