@@ -2,8 +2,10 @@
 from subinterface import SubInterface
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from pdf_utils import *
+# from pdf_utils import *
+import pdf_utils
 import os
+from functools import wraps
 
 
 class Pdf(SubInterface):
@@ -38,17 +40,23 @@ class Pdf(SubInterface):
 
         tk.Button(self.frm_func,
                   text='开始拆分',
-                  command=lambda: split_pdf(self.file_path,
-                                            self.page_from_var.get(),
-                                            self.page_to_var.get(),
-                                            self.output_path_var.get())) \
+                  command=lambda: self.execute(
+                      'split',
+                      file_path=self.file_path,
+                      start_page=self.page_from_var.get(),
+                      end_page=self.page_to_var.get(),
+                      output_dir=self.output_path_var.get())) \
             .grid(row=2, column=2, columnspan=3, pady=20)
 
     def merge_panel(self):
         self.text_panel.destroy()
         self.pdfs_panel.pack(padx=100)
         tk.Button(self.frm_exhibition, text='开始合并',
-                  command=lambda: merge_pdf(self.file_path, self.output_path_var.get())).pack(pady=20)
+                  command=lambda: self.execute(
+                      'merge',
+                      pdfs=self.file_path,
+                      output_dir=self.output_path_var.get()
+                  )).pack(pady=20)
 
     def encrypt_panel(self):
         tk.Label(self.frm_func, text='输入加密密码：').grid(row=0, column=0)
@@ -56,9 +64,12 @@ class Pdf(SubInterface):
                  show='*', width=15) \
             .grid(row=0, column=1)
         tk.Button(self.frm_func, text='开始加密',
-                  command=lambda: password(self.file_path,
-                                           self.output_path_var.get(),
-                                           self.password_var.get())) \
+                  command=lambda: self.execute(
+                      'encrypt',
+                      file_path=self.file_path,
+                      output_dir=self.output_path_var.get(),
+                      password=self.password_var.get()
+                  )) \
             .grid(row=1, column=0, columnspan=2, pady=30)
 
     def watermark_panel(self):
@@ -67,9 +78,12 @@ class Pdf(SubInterface):
                  width=15) \
             .grid(row=0, column=1)
         tk.Button(self.frm_func, text='添加水印',
-                  command=lambda: pdfwater(self.file_path,
-                                           self.output_path_var.get(),
-                                           self.watermark_var.get())) \
+                  command=lambda: self.execute(
+                      'watermark',
+                      file_path=self.file_path,
+                      output_dir=self.output_path_var.get(),
+                      content=self.watermark_var.get()
+                  )) \
             .grid(row=1, column=0, columnspan=2, pady=30)
 
     def reveal_file(self):
@@ -80,10 +94,42 @@ class Pdf(SubInterface):
                 return
             self.text_panel.delete('1.0', 'end')
             self.file_name_var.set(os.path.basename(self.file_path))
-            self.page_count, pdf_content = read_pdf(self.file_path)
+            self.page_count, pdf_content = pdf_utils.read_pdf(self.file_path)
             self.page_count_var.set('确定拆分范围（1-{}）'.format(self.page_count))
             self.text_panel.insert('end', pdf_content)
         else:
             self.pdfs_panel.delete(0, 'end')
             for p in self.file_path:
                 self.pdfs_panel.insert('end', p)
+
+    def execute(self, mode, **kwargs):
+        funcs = {
+            'merge': pdf_utils.merge_pdf,
+            'encrypt': pdf_utils.password,
+            'split': pdf_utils.split_pdf,
+            'watermark': pdf_utils.pdfwater
+        }
+        self.root.wm_attributes('-topmost', 0)
+        funcs[mode](**kwargs)
+        self.root.wm_attributes('-topmost', 1)
+
+    # def password(self):
+    #     """加密 pdf"""
+    #     self.root.wm_attributes('-topmost', 0)
+    #     pdf_utils.password(self.file_path,
+    #                        self.output_path_var.get(),
+    #                        self.password_var.get())
+    #     self.root.wm_attributes('-topmost', 1)
+    #
+    # def pdfwater(self):
+    #     """pdf 添加水印"""
+    #     self.root.wm_attributes('-topmost', 0)
+    #     pdf_utils.pdfwater(self.file_path,
+    #                        self.output_path_var.get(),
+    #                        self.watermark_var.get())
+    #     self.root.wm_attributes('-topmost', 1)
+    #
+    # def merge_pdf(self):
+    #     self.root.wm_attributes('-topmost', 0)
+    #     pdf_utils.merge_pdf()
+    #     self.root.wm_attributes('-topmost', 1)

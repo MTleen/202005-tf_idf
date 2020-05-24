@@ -23,13 +23,7 @@ class DocKw(object):
         self.status = {}
         self.idf_dir = './dataset/data'
         self.idf_path = None
-
-        # self.root = tk.Tk()
-        # self.frm = tk.Frame(self.root)
-        # self.frm_l = tk.Frame(self.frm)
         self.root = tk.Toplevel()
-        # self.frm_r = tk.Frame(self.frm)
-        # self.menubar = tk.Menu(self.root)
         self.menubar = tk.Menu(self.root)
         self.idf_menu = tk.Menu(self.menubar, tearoff=0)
         self.idf_root = None
@@ -55,6 +49,8 @@ class DocKw(object):
     def construct_gui(self):
         self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
         self.root.config(menu=self.menubar)
+        set_win_size(self.root, 400, 700)
+        self.root.title('提取关键字')
         # 构建关键词提取模块界面
         tk.Label(self.root, text='关键词提取模块').pack()
         tk.Button(self.root, text='选择文件', command=lambda: self.reveal_doc('dp')).pack()
@@ -76,6 +72,8 @@ class DocKw(object):
         # 相似度输出模块
         self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
         self.root.config(menu=self.menubar)
+        set_win_size(self.root, 400, 700)
+        self.root.title('相似度对比')
         tk.Label(self.root, text='相似度输出模块').pack()
         tk.Button(self.root, text='选择文件 1', command=lambda: self.reveal_doc('dp_r1')).pack()
         tk.Label(self.root, textvariable=self.doc_title_r1).pack()
@@ -110,7 +108,7 @@ class DocKw(object):
         print('file_path', file_path)
         # 判断是否选择了文件
         if not file_path:
-            messagebox.showinfo(message='请选择正确的文件。')
+            self.show_error('请选择正确的文件。')
             return
         try:
             # 先清除文本框
@@ -160,10 +158,10 @@ class DocKw(object):
             for key, val in jieba_keywords.items():
                 self.kw_panel_jieba.insert('end', '{}: {:.5f}'.format(key, float(val)))
         except ValueError:
-            messagebox.showerror(message='请输入正确的 topK 值。')
+            self.show_error('请输入正确的 topK 值。')
             traceback.print_exc()
         except KeyError:
-            messagebox.showerror(message='请先选择文档。')
+            self.show_error('请先选择文档。')
             traceback.print_exc()
         # except Exception:
         #     messagebox.showerror(message=traceback.format_exc())
@@ -213,7 +211,7 @@ class DocKw(object):
         self.idf_root = tk.Toplevel()
         self.idf_root.wm_attributes('-topmost', 1)
         self.idf_root.resizable(0, 0)
-        self.idf_root.geometry('400x90')
+        set_win_size(self.idf_root, 400, 90)
         self.path_var = tk.Variable(self.idf_root, value='dataset\\data')
         self.idf_root.title('选择生成 idf 字典的文件夹。')
         tk.Label(self.idf_root, text='目标路径：').grid(row=0, column=0, padx=5)
@@ -222,7 +220,9 @@ class DocKw(object):
         tk.Button(self.idf_root, text='确定', command=self.confirm_dir).grid(row=1, column=1, pady=10)
 
     def select_dir(self):
+        self.idf_root.wm_attributes('-topmost', 0)
         self.path_var.set(filedialog.askdirectory())
+        self.idf_root.wm_attributes('-topmost', 1)
 
     def confirm_dir(self):
         self.idf_dir = self.path_var.get()
@@ -232,11 +232,33 @@ class DocKw(object):
             corpus = data.corpus
             idf = Idf(corpus)
             idf.save()
-            tk.messagebox.showinfo(message='idf 字典保存成功\n保存路径：{}'.format(self.idf_path))
             self.idf_root.destroy()
+            messagebox.showinfo(message='idf 字典保存成功\n保存路径：{}'.format(self.idf_path))
+            self.root.wm_attributes('-topmost', 1)
         except Exception:
             # tk.messagebox.showerror(message='请将文档放在 ".\\dataset\\data" 文件夹下，然后重试。')
             traceback.print_exc()
+            self.idf_root.wm_attributes('-topmost', 1)
+
+    def show_error(self, message):
+        self.root.wm_attributes('-topmost', 0)
+        messagebox.showerror(message=message)
+        self.root.wm_attributes('-topmost', 1)
+
+
+def set_win_size(panel, wid, hei):
+    # 设置窗口大小
+    win_width = wid
+    win_height = hei
+    # 获取屏幕分辨率
+    screen_width = panel.winfo_screenwidth()
+    screen_height = panel.winfo_screenheight()
+
+    x = int((screen_width - win_width) / 2)
+    y = int((screen_height - win_height) / 2)
+    panel.geometry("%sx%s+%s+%s" % (win_width, win_height, x, y))
+    # self.root.geometry("%sx%s" % (win_width, win_height))
+    panel.resizable(0, 0)
 
 
 def load_idf(idf_dir):

@@ -54,8 +54,8 @@ class SubInterface(object):
 
         x = int((screen_width - win_width) / 2)
         y = int((screen_height - win_height) / 2)
-        # self.root.geometry("%sx%s+%s+%s" % (win_width, win_height, x, y))
-        self.root.geometry("%sx%s" % (win_width, win_height))
+        self.root.geometry("%sx%s+%s+%s" % (win_width, win_height, x, y))
+        # self.root.geometry("%sx%s" % (win_width, win_height))
         self.root.resizable(0, 0)
 
     def select_file(self, mode):

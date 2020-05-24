@@ -55,11 +55,13 @@ class OCR(SubInterface):
         """
             picfile:    图片文件名
             outfile:    输出文件
-            """
+        """
+        self.root.wm_attributes('-topmost', 0)
         picfile = self.file_path
         outfile = self.output_path_var.get()
         if picfile is None or outfile == '':
             messagebox.showerror(message='请先选择正确的图片文件或输出文件。')
+            self.root.wm_attributes('-topmost', 1)
             return
         filename = os.path.basename(picfile)
 
@@ -114,4 +116,5 @@ class OCR(SubInterface):
             fo.writelines('\n' * 2)
         os.remove(tmp_path)
         messagebox.showinfo(message='OCR 内容保存成功\n保存路径：{}'.format(outfile))
+        self.root.wm_attributes('-topmost', 1)
         # print("文本导出成功！")
