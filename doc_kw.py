@@ -11,6 +11,7 @@ from word2vec import WV
 import json
 import numpy as np
 from jieba import analyse
+import math
 
 
 class DocKw(object):
@@ -24,16 +25,16 @@ class DocKw(object):
         self.idf_dir = './dataset/data'
         self.idf_path = None
         self.root = tk.Toplevel()
-        self.menubar = tk.Menu(self.root)
-        self.idf_menu = tk.Menu(self.menubar, tearoff=0)
+        # self.menubar = tk.Menu(self.root)
+        # self.idf_menu = tk.Menu(self.menubar, tearoff=0)
         self.idf_root = None
         self.path_var = None
 
         self.doc_title = tk.Variable(self.root, value='文件内容展示')
         self.doc_panel = tk.Text(self.root, width=50, height=20)
         self.frm_topk = tk.Frame(self.root)
-        self.topk_var = tk.Variable(self.frm_topk)
-        self.topk_entry = tk.Entry(self.frm_topk, textvariable=self.topk_var)
+        # self.topk_var = tk.Variable(self.frm_topk)
+        # self.topk_entry = tk.Entry(self.frm_topk, textvariable=self.topk_var)
         self.frm_kw = tk.Frame(self.root)
         self.frm_ours = tk.Frame(self.frm_kw)
         self.frm_jieba = tk.Frame(self.frm_kw)
@@ -47,8 +48,8 @@ class DocKw(object):
         self.sim_panel = tk.Listbox(self.root, width=50, height=10)
 
     def construct_gui(self):
-        self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
-        self.root.config(menu=self.menubar)
+        # self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
+        # self.root.config(menu=self.menubar)
         set_win_size(self.root, 400, 700)
         self.root.title('提取关键字')
         # 构建关键词提取模块界面
@@ -58,8 +59,9 @@ class DocKw(object):
         self.doc_panel.pack(padx=20)
         tk.Label(self.root, text='关键词展示').pack()
         self.frm_topk.pack(pady=10)
-        self.topk_entry.pack(side='left')
-        tk.Button(self.frm_topk, text='生成关键词', command=self.refresh_key_words).pack(side='right', padx=10)
+        # self.topk_entry.pack(side='left')
+        # tk.Button(self.frm_topk, text='生成关键词', command=self.refresh_key_words).pack(side='right', padx=10)
+        tk.Button(self.frm_topk, text='生成关键词', command=self.refresh_key_words).pack()
         self.frm_kw.pack()
         self.frm_ours.pack(side='left', padx=10)
         tk.Label(self.frm_ours, text='Ours').pack()
@@ -70,8 +72,8 @@ class DocKw(object):
 
     def construct_sim_gui(self):
         # 相似度输出模块
-        self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
-        self.root.config(menu=self.menubar)
+        # self.menubar.add_command(label='生成 idf 字典', command=self.gen_idf)
+        # self.root.config(menu=self.menubar)
         set_win_size(self.root, 400, 700)
         self.root.title('相似度对比')
         tk.Label(self.root, text='相似度输出模块').pack()
@@ -116,11 +118,12 @@ class DocKw(object):
             data = Data(file_path)
             title.set(os.path.split(file_path)[-1])
             print('file:', os.path.split(file_path)[-1])
-            t.insert('end', data.raw_text)
+            # t.insert('end', data.raw_text)
+            t.insert('end', data.corpus)
             # 加载 idf 字典
             idf = load_idf(self.idf_dir)
             # 计算 tf_idf score
-            tf_idf = Tfidf(data.corpus, idf)
+            tf_idf = Tfidf(data.corpus, len(data.corpus) // 20)
             # 保存当前文档的data、tfidf对象，用于后续的提取关键词或者计算相似度
             self.status[text_panel] = {
                 'data': data,
@@ -128,8 +131,10 @@ class DocKw(object):
             }
             if text_panel == 'dp':
                 # 提取关键词模块，默认提取20个关键词
-                self.topk_var.set(20)
-                self.refresh_key_words()
+                # self.topk_var.set(20)
+                # self.refresh_key_words()
+                self.kw_panel_jieba.delete(0, 'end')
+                self.kw_panel_ours.delete(0, 'end')
             elif text_panel == 'dp_r1' or text_panel == 'dp_r2':
                 # if self.status.get('dp_r1', None) and self.status.get('dp_r2', None):
                 #     self.show_similarity()
@@ -144,14 +149,16 @@ class DocKw(object):
         """
         点击”生成关键词“按钮调用词函数，会刷新关键词
         """
-        topK = self.topk_var.get()
+        # topK = self.topk_var.get()
         try:
-            topK = int(topK)
+            # topK = int(topK)
+            topK = 20
             tf_idf = self.status['dp']['tfidf']
             data = self.status['dp']['data']
             self.kw_panel_jieba.delete(0, 'end')
             self.kw_panel_ours.delete(0, 'end')
-            keywords = extract_kw(topK, tf_idf, is_jieba=False)[0]
+            # keywords = extract_kw(topK, tf_idf, is_jieba=False)[0]
+            keywords = tf_idf.scores
             for key, val in keywords.items():
                 self.kw_panel_ours.insert('end', '{}: {:.5f}'.format(key, float(val)))
             jieba_keywords = extract_kw(topK, data, is_jieba=True)[0]
@@ -170,39 +177,57 @@ class DocKw(object):
         """展示相似度，点击”显示相似度”按钮调用此函数“"""
         self.sim_panel.delete(0, 'end')
         # 为了加快gui展示的速度，所以把加载模型的操作放到这里
-        self.wv_model = WV('model\\model7.model')
+        # self.wv_model = WV('model\\model7.model')
         # tf_idf 相似度计算
         tfidf_dpr1 = self.status['dp_r1']['tfidf']
         tfidf_dpr2 = self.status['dp_r2']['tfidf']
         data1 = self.status['dp_r1']['data']
         data2 = self.status['dp_r2']['data']
         # tf-idf 相似度
-        for topK in [20, 40, 200]:
-            doc1_vec, doc2_vec = doc2vec_tfidf(topK, tfidf_dpr1, tfidf_dpr2)
-            self.sim_panel.insert('end', '-' * 30)
-            self.sim_panel.insert('end', 'tf-idf (topK={}): {:.5f}'.format(topK, cosine_similarity(doc1_vec, doc2_vec)))
-            doc1_vec, doc2_vec = doc2vec_tfidf(20, data1, data2, is_jieba=True)
-            # self.sim_panel.insert('end', '-' * 30)
-            self.sim_panel.insert('end', 'jieba (topK={}): {:.5f}'.format(topK, cosine_similarity(doc1_vec, doc2_vec)))
-        # word2vec 相似度计算
-        doc1_vec = self.wv_model.doc2vec(data1.corpus[0])
-        doc2_vec = self.wv_model.doc2vec(data2.corpus[0])
-        self.sim_panel.insert('end', '-' * 30)
-        self.sim_panel.insert('end', 'word2vec (dim=300): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
-        # tfidf+wv 相似度计算
-        doc1_kw, doc2_kw = extract_kw(20, tfidf_dpr1, tfidf_dpr2, is_jieba=False)
-        doc1_vec = self.wv_model.doc2vec(list(doc1_kw.keys()))
-        doc2_vec = self.wv_model.doc2vec(list(doc2_kw.keys()))
-        self.sim_panel.insert('end', '-' * 30)
-        self.sim_panel.insert('end',
-                              'tfidf+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
-        # jieba+wv 相似度计算
-        doc1_kw, doc2_kw = extract_kw(20, tfidf_dpr1, tfidf_dpr2, is_jieba=True)
-        doc1_vec = self.wv_model.doc2vec(list(doc1_kw.keys()))
-        doc2_vec = self.wv_model.doc2vec(list(doc2_kw.keys()))
-        self.sim_panel.insert('end', '-' * 30)
-        self.sim_panel.insert('end',
-                              'jieba+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
+        # for topK in [20, 40, 200]:
+        #     doc1_vec, doc2_vec = doc2vec_tfidf(topK, tfidf_dpr1, tfidf_dpr2)
+        #     self.sim_panel.insert('end', '-' * 30)
+        #     self.sim_panel.insert('end', 'tf-idf (topK={}): {:.5f}'.format(topK, cosine_similarity(doc1_vec, doc2_vec)))
+        #     doc1_vec, doc2_vec = doc2vec_tfidf(20, data1, data2, is_jieba=True)
+        #     # self.sim_panel.insert('end', '-' * 30)
+        #     self.sim_panel.insert('end', 'jieba (topK={}): {:.5f}'.format(topK, cosine_similarity(doc1_vec, doc2_vec)))
+        # # word2vec 相似度计算
+        # doc1_vec = self.wv_model.doc2vec(data1.corpus[0])
+        # doc2_vec = self.wv_model.doc2vec(data2.corpus[0])
+        # self.sim_panel.insert('end', '-' * 30)
+        # self.sim_panel.insert('end', 'word2vec (dim=300): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
+        # # tfidf+wv 相似度计算
+        # doc1_kw, doc2_kw = extract_kw(20, tfidf_dpr1, tfidf_dpr2, is_jieba=False)
+        # doc1_vec = self.wv_model.doc2vec(list(doc1_kw.keys()))
+        # doc2_vec = self.wv_model.doc2vec(list(doc2_kw.keys()))
+        # self.sim_panel.insert('end', '-' * 30)
+        # self.sim_panel.insert('end',
+        #                       'tfidf+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
+        # # jieba+wv 相似度计算
+        # doc1_kw, doc2_kw = extract_kw(20, tfidf_dpr1, tfidf_dpr2, is_jieba=True)
+        # doc1_vec = self.wv_model.doc2vec(list(doc1_kw.keys()))
+        # doc2_vec = self.wv_model.doc2vec(list(doc2_kw.keys()))
+        # self.sim_panel.insert('end', '-' * 30)
+        # self.sim_panel.insert('end',
+        #                       'jieba+word2vec (dim=300, topK=20): {:.5f}'.format(cosine_similarity(doc1_vec, doc2_vec)))
+        wd1 = tfidf_dpr1.scores
+        wd2 = tfidf_dpr2.scores
+        vect1, vect2 = merge(wd1, wd2)
+        # print(text1)
+        print("关键词为：")
+        for key in wd1.keys():
+            print(key, end=' ')
+        # print(v1)
+        # print(text2)
+        print("\n关键词为：")
+        for key in wd2.keys():
+            print(key, end=' ')
+        # print(v2)
+        print()
+        print("\n两个文档的相似度为：")
+        sim = cosine_similarity(vect1, vect2)
+        print(sim)
+        self.sim_panel.insert('end', '相似度：{:.5f}'.format(sim))
 
     def gen_idf(self):
         """
@@ -279,10 +304,31 @@ def load_idf(idf_dir):
         tk.messagebox.showerror(message='idf 字典不存在，请先生成 idf 字典。'.format(idf_path))
 
 
-def cosine_similarity(vec1, vec2):
-    dot = np.sum(vec1 * vec2)
-    dis = np.sqrt(np.sum(vec1 ** 2)) * np.sqrt(np.sum(vec2 ** 2))
-    return dot / dis
+# def cosine_similarity(vec1, vec2):
+def cosine_similarity(vect1, vect2):
+    # dot = np.sum(vec1 * vec2)
+    # dis = np.sqrt(np.sum(vec1 ** 2)) * np.sqrt(np.sum(vec2 ** 2))
+    # return dot / dis
+    """
+       计算两个向量之间的余弦相似度
+       :param vect1: 向量 1
+       :param vect2: 向量 2
+       :return: sim
+       """
+    # 计算余弦相似度
+    sum = 0
+    sq1 = 0
+    sq2 = 0
+    for i in range(len(vect1)):
+        sum += vect1[i] * vect2[i]
+        sq1 += pow(vect1[i], 2)
+        sq2 += pow(vect2[i], 2)
+    try:
+        result = round(float(sum) / (math.sqrt(sq1) * math.sqrt(sq2)), 2)
+    except ZeroDivisionError:
+        result = 0.0
+    # print(result)
+    return result
 
 
 def doc2vec_tfidf(topK, *args, is_jieba=False):
@@ -326,8 +372,26 @@ def extract_kw(topK, *entities, is_jieba=False):
     kws = []
     for entity in entities:
         if is_jieba:
-            kw = dict(analyse.extract_tags(''.join(entity.corpus[0]), topK=topK, withWeight=True))
+            # kw = dict(analyse.extract_tags(''.join(entity.corpus[0]), topK=topK, withWeight=True))
+            kw = dict(analyse.extract_tags(entity.corpus, topK=topK, withWeight=True))
         else:
             kw = entity.extract_key_words(topK)[0]
         kws.append(kw)
     return kws
+
+
+def merge(words1, words2):
+    # 合并两个文档的词向量关键词词频词典，返回生成两个文档的关键词的词向量，用于计算相似度
+    v1 = []
+    v2 = []
+    for key in words1:
+        v1.append(words1[key])
+        if key in words2:
+            v2.append(words2[key])
+        else:
+            v2.append(0.0)
+    for key in words2:
+        if key not in words1:
+            v2.append(words2[key])
+            v1.append(0.0)
+    return v1, v2
